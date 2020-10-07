@@ -1,35 +1,32 @@
 import akka.actor.typed.ActorSystem
-import akka.actor.typed.javadsl.Behaviors
-import scala.util.Random
-import scala.concurrent.Future
+import akka.actor.typed.scaladsl.Behaviors
+import akka.stream.scaladsl.Source
+
 import scala.concurrent.duration._
-import java.util.concurrent.Executor
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import pubsub.reporter.ConsoleReporter
-import pubsub._
 
 object Sample extends App {
 
   private implicit val system = ActorSystem(Behaviors.empty, "perf")
   private implicit val ec = system.executionContext
-  private val subscriber = new Subscriber
-  private val publisher = new Publisher
 
-  private val reporterExecutor: ExecutorService =
-    Executors.newFixedThreadPool(1)
-
-  private val reporter = new ConsoleReporter("perf")
-  reporterExecutor.execute(reporter)
-
-  val stream1 = publisher.createSource(
-    Future(Random.alphanumeric.take(10).mkString),
-    50.millis
-  )
-
-  subscriber.subscribeCallback(stream1, report)
-
-  def report(event: String): Unit = {
-    reporter.onMessage(1, event.getBytes().size)
-  }
+  val start = System.nanoTime()
+  val done = Source
+    .repeat("tick")
+    .throttle(1, 10.millis)
+    // .tick(10.millis, 10.millis, ())
+    .statefulMapConcat { () =>
+      var previous = start
+      _ => {
+        val now = System.nanoTime()
+        val duration = now - previous
+        previous = now
+        List(duration)
+      }
+    }
+    .groupedWithin(Int.MaxValue, 1.second)
+    .take(120)
+    .runForeach { ticks =>
+      val durationMillis = ticks.map(_.nanos.toMillis)
+      println(s"${ticks.size} ticks: [${durationMillis.mkString(", ")}]")
+    }
 }
