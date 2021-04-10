@@ -1,4 +1,4 @@
-name := "akka-benchmarks"
+name := "akka-playground"
 
 version := "1.0"
 
@@ -21,18 +21,18 @@ val common = Seq(
   "org.scalatest" %% "scalatest" % "3.1.0" % Test
 )
 
-lazy val `akka-benchmarks` = project.in(file("."))
+lazy val `akka-playground` = project.in(file("."))
 
-lazy val `akka-benchmarks-25` =
+lazy val `akka-25` =
   project
-    .in(file("akka-benchmarks-25"))
+    .in(file("akka-25"))
     .settings(
       libraryDependencies ++= common ++ akka(akka2_5_25)
     )
 
-lazy val `akka-benchmarks-26` =
+lazy val `akka-26` =
   project
-    .in(file("akka-benchmarks-26"))
+    .in(file("akka-26"))
     .settings(
       libraryDependencies ++= common ++ akka(akka2_6_13),
       javaOptions ++= Seq(
